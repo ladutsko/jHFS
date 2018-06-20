@@ -1,0 +1,154 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        jcenter()  
+    }
+
+    dependencies {
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.3.RELEASE'
+        classpath 'com.netflix.nebula:gradle-ospackage-plugin:4.9.3'
+        classpath 'org.owasp:dependency-check-gradle:3.2.1'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'nebula.ospackage'
+apply plugin: 'org.owasp.dependencycheck'
+
+description 'Java HTTP File Server'
+group = 'com.github.ladutsko'
+version = '1.0.0'
+archivesBaseName = 'jhfs'
+
+repositories {
+    mavenLocal()
+    jcenter()  
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+configurations {
+    compile.exclude module: 'spring-boot-starter-tomcat'
+}
+
+dependencies {
+    compile 'org.springframework.boot:spring-boot-starter-web'  
+    compile 'org.springframework.boot:spring-boot-starter-jetty'
+    compile 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    compile 'io.micrometer:micrometer-registry-jmx'
+    compile 'org.apache.commons:commons-compress:1.17'
+
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
+}
+
+jar {
+    enabled = true
+
+    into('META-INF') {
+        from files('LICENSE.md')
+    }
+
+    manifest {
+        attributes('Implementation-Title' : project.description,
+                   'Implementation-Version' : project.version,
+                   'Implementation-Vendor' : 'George Ladutsko')
+    }
+}
+
+bootJar {
+    classifier = 'boot'
+}
+
+ospackage {
+    release = 1
+    vendor = 'George Ladutsko'
+    url = 'https://github.com/ladutsko/jhfs'
+    license = 'MIT'
+
+    user 'root'
+    permissionGroup 'root'
+
+    into '/usr/share/jhfs'
+
+    from(jar.outputs.files) {
+        into 'lib'
+    }
+
+    from(configurations.runtime) {
+        into 'lib'
+    }
+
+    from('src/main/package/linux/etc') {
+        fileType CONFIG | NOREPLACE
+        user 'jhfs'
+        permissionGroup 'jhfs'
+        into '/etc/jhfs'
+    }
+
+    from('src/main/package/linux/systemd') {
+        into '/usr/lib/systemd'
+    }
+}
+
+buildRpm {
+    arch = NOARCH
+    os = LINUX
+    type = BINARY
+
+    requires('java-1.8.0-openjdk')
+
+    preInstall file('src/main/package/linux/scripts/rpm/preInstall.sh')
+    postInstall file('src/main/package/linux/scripts/rpm/postInstall.sh')
+    preUninstall file('src/main/package/linux/scripts/rpm/preUninstall.sh')
+    postUninstall file('src/main/package/linux/scripts/rpm/postUninstall.sh')
+}
+
+buildDeb {
+    requires('openjdk-8-jre')
+
+    preInstallFile file('src/main/package/linux/scripts/deb/preInstall.sh')
+    postInstallFile file('src/main/package/linux/scripts/deb/postInstall.sh')
+    preUninstallFile file('src/main/package/linux/scripts/deb/preUninstall.sh')
+    postUninstallFile file('src/main/package/linux/scripts/deb/postUninstall.sh')
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task buildWin(type: Zip) {
+    classifier = 'windows'
+
+    into('/') {
+        from files('LICENSE.md')
+    }
+
+    from(jar.outputs.files) {
+        into 'lib'
+    }
+
+    from(configurations.runtime) {
+        into 'lib'
+    }
+
+    from('src/main/package/windows/bin') {
+        into 'bin'
+    }
+
+    from('src/main/package/windows/config') {
+        into 'config'
+    }
+}
+
+artifacts {
+    archives javadocJar, sourcesJar, buildRpm, buildDeb, buildWin
+}

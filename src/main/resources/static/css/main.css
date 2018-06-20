@@ -1,0 +1,18 @@
+body {
+    padding-top: 70px;
+}
+
+.nav-link::before{
+    display: inline-block;
+    padding-right: 1rem;
+    content: "/";
+}
+
+.label {
+  font-weight: 700;
+}
+
+.label::after {
+    display: inline-block;
+    content: ":";
+}

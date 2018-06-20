@@ -1,0 +1,96 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous" />
+    <link rel="stylesheet" th:href="@{/css/main.css}" />
+
+    <title>jHFS</title>
+</head>
+<body class="container">
+    <!-- Content here -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: coral;">
+        <a class="navbar-brand" th:href="@{/}" th:utext="#{home.text}" />
+
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item" th:each="entry : ${breadcrumb}" >
+                <a class="nav-link active" th:href="@{/explorer/{url}(url=${entry.path})}" th:text="${entry.displayName}" />
+            </li>
+        </ul>
+
+        <div class="dropdown mr-1">
+            <button type="button" class="btn btn-outline-light dropdown-toggle" data-toggle="dropdown" data-placement="left" aria-haspopup="true" aria-expanded="false" th:title="#{order.title.text}" th:utext="#{|order.${order.order.name()}.${order.arrangement.name()}.text|}" />
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="?o=-modified" th:classappend="${T(com.github.ladutsko.jhfs.web.OrderEnum).MODIFIED eq order.order and T(com.github.ladutsko.jhfs.web.ArrangementEnum).DESC eq order.arrangement}? 'active'" th:utext="#{order.MODIFIED.DESC.text}" />
+                <a class="dropdown-item" href="?o=modified" th:classappend="${T(com.github.ladutsko.jhfs.web.OrderEnum).MODIFIED eq order.order and T(com.github.ladutsko.jhfs.web.ArrangementEnum).ASC eq order.arrangement}? 'active'" th:utext="#{order.MODIFIED.ASC.text}" />
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="?o=name" th:classappend="${T(com.github.ladutsko.jhfs.web.OrderEnum).NAME eq order.order and T(com.github.ladutsko.jhfs.web.ArrangementEnum).ASC eq order.arrangement}? 'active'" th:utext="#{order.NAME.ASC.text}" />
+                <a class="dropdown-item" href="?o=-name" th:classappend="${T(com.github.ladutsko.jhfs.web.OrderEnum).NAME eq order.order and T(com.github.ladutsko.jhfs.web.ArrangementEnum).DESC eq order.arrangement}? 'active'" th:utext="#{order.NAME.DESC.text}" />
+            </div>
+        </div>
+
+        <form id="download" class="form-inline my-2 my-lg-0" method="post" th:action="@{/download/{path}(path=${path})}">
+            <button class="btn btn-outline-light my-2 my-sm-0" type="submit" th:utext="#{download.btn}" />
+        </form>
+    </nav>
+
+    <div id="list">
+        <table class="table">
+            <tbody>
+            <tr th:each="entry : ${entries}">
+                <td class="w-100" scope="row">
+                    <div class="media">
+                        <img class="mr-3" th:src="@{/images/folder-orange-icon-48x48.png}" th:if="${entry.container}" alt="" />
+                        <img style="width: 48px; height: 48px" class="mr-3" th:src="@{/images/mime/{ext}-icon-48x48.png(ext=${entry.ext})}" th:unless="${entry.container}" alt="" />
+                        <div class="media-body">
+                            <h5 class="mt-0">
+                                <a th:href="@{/explorer/{path}(path=${entry.path})}" th:text="${entry.name}" th:if="${entry.container}" />
+                                <a th:href="@{/download/{path}(path=${entry.path})}" th:text="${entry.name}" th:unless="${entry.container}" />
+                                <span class="badge badge-warning text-uppercase" th:if="${entry.novelty}" th:utext="#{novelty.text}" />
+                            </h5>
+                            <p th:utext="${entry.description}" th:unless="${#strings.isEmpty(entry.description)}" />
+                            <footer class="row">
+                                <div class="col-3">
+                                    <small th:unless="${entry.container}">
+                                        <span class="label" th:utext="#{size.text}" />
+                                        <span th:text="${#numbers.formatInteger(entry.size,3,'WHITESPACE')}" />
+                                    </small>
+                                </div>
+                                <div class="col-2">
+                                    <!--/*-->
+                                    <small th:unless="${entry.container}">
+                                        <span class="label" th:utext="#{hits.text}" />
+                                        <span th:text="${entry.hits}" />
+                                    </small>
+                                    <!--*/-->
+                                </div>
+                                <div class="col-7">
+                                    <small>
+                                        <span class="label" th:utext="#{date.text}" />
+                                        <time th:datetime="${#temporals.formatISO(entry.lastModifiedTime)}" />
+                                    </small>
+                                </div>
+                            </footer>
+                        </div>
+                    </div>
+                </td>
+                <td class="form-check">
+                    <input class="form-check-input" type="checkbox" name="name" form="download" th:value="${entry.name}" th:unless="${entry.container}" />
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>

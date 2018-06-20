@@ -1,0 +1,18 @@
+[Unit]
+Description=Java HTTP File Server
+
+[Service]
+User=jhfs
+Group=jhfs
+EnvironmentFile=/etc/jhfs/jhfs-env.conf
+Environment=PIDFILE=/var/run/jhfs/application.pid
+Environment=PORTFILE=/var/run/jhfs/application.port
+RuntimeDirectory=jhfs
+ExecStartPre=/bin/rm -f /var/run/jhfs/*
+ExecStart=/usr/bin/java $JAVA_OPTS com.github.ladutsko.jhfs.Application
+PIDFile=/var/run/jhfs/application.pid
+SuccessExitStatus=143
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

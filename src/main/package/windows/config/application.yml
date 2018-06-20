@@ -1,0 +1,9 @@
+server.port: 8000
+
+jhfs.fs.charset: utf8
+jhfs.fs.descriptors:
+
+  - id: welcome
+    displayName: Welcome
+    uri: file:///C:/jhfs/welcome
+    description: "<p>"

@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+build/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# Vagrant
+.vagrant/
+Vagrantfile
+
+# Application
+logs/
