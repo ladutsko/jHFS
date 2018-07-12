@@ -29,6 +29,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -63,16 +64,25 @@ public class DownloadController {
 
     private static final String UTF8 = StandardCharsets.UTF_8.name();
 
-    private static final int BUFFER_SIZE = 8192;
-
     private static final String BINARY_MIME_TYPE = "application/octen-stream";
     private static final String TAR_MIME_TYPE    = "application/x-tar";
     private static final String TAR_EXT          = ".tar";
 
     private final FsService fsService;
 
+    private int bufferSize;
+
     public DownloadController(FsService fsService) {
         this.fsService = fsService;
+    }
+
+    public int getBufferSize() {
+        return bufferSize;
+    }
+
+    @Value("${jhfs.fs.download.bufferSize:8192}")
+    public void setBufferSize(int bufferSize) {
+        this.bufferSize = bufferSize;
     }
 
     @GetMapping("/**")
@@ -123,7 +133,7 @@ public class DownloadController {
 
         try (InputStream in = fsService.newInputStream(entry.getPath());
              OutputStream out = response.getOutputStream()) {
-            copy(in, out, new byte[BUFFER_SIZE]);
+            copy(in, out, new byte[bufferSize]);
         }
     }
 
@@ -146,7 +156,7 @@ public class DownloadController {
             tar.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
             tar.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
 
-            byte[] buf = new byte[BUFFER_SIZE];
+            byte[] buf = new byte[bufferSize];
             for (FsEntry entry : entries) {
                 try (InputStream in = fsService.newInputStream(entry.getPath())) {
                     TarArchiveEntry tarEntry = new TarArchiveEntry(entry.getName());

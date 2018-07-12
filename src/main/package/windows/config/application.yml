@@ -1,5 +1,8 @@
 server.port: 8000
 
+# Download buffer size in bytes. Default 8192
+#jhfs.fs.download.bufferSize: 131072
+
 jhfs.fs.charset: utf8
 jhfs.fs.descriptors:
 
