@@ -13,3 +13,5 @@ Vagrantfile
 
 # Application
 logs/
+application.pid
+application.port
