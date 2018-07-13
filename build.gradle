@@ -68,6 +68,8 @@ ospackage {
     url = 'https://github.com/ladutsko/jhfs'
     license = 'MIT'
 
+    requires('systemd')
+
     user 'root'
     permissionGroup 'root'
 
