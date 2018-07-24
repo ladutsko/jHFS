@@ -25,7 +25,9 @@ package com.github.ladutsko.jhfs;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.PropertySource;
 
+@PropertySource("classpath:/default.properties")
 @SpringBootApplication
 public class Application {
 
