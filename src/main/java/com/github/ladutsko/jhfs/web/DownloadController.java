@@ -92,14 +92,14 @@ public class DownloadController {
 
         FsEntry entry = fsService.getEntry(path);
         if (entry.isContainer()) {
-            downloadTar(entry, fsService.getChildren(path), response);
+            downloadTar(entry, fsService.getChildren(path), request.getRequest(), response);
         } else {
             if (request.checkNotModified(entry.getLastModifiedTime().toEpochMilli())) {
                 LOGGER.debug("handleGet: NOT_MODIFIED");
                 return;
             }
 
-            download(entry, response);
+            download(entry, request.getRequest(), response);
         }
     }
 
@@ -119,10 +119,10 @@ public class DownloadController {
                                                            .collect(toList()))
                                         .orElseGet(() -> fsService.getChildren(path));
 
-        downloadTar(entry, entries, response);
+        downloadTar(entry, entries, request, response);
     }
 
-    protected void download(FsEntry entry, HttpServletResponse response) throws IOException {
+    protected void download(FsEntry entry, HttpServletRequest request, HttpServletResponse response) throws IOException {
         LOGGER.debug("download(entry={})", entry);
 
         String name = entry.getName();
@@ -133,16 +133,16 @@ public class DownloadController {
                                                             + URLEncoder.encode(name, UTF8)
                                                                         .replace("+", "%20"));
 
-        LOGGER.info("Start download: {}", name);
+        LOGGER.info("{} Start download: {}", request.getRemoteAddr(), name);
         try (InputStream in = fsService.newInputStream(entry.getPath());
              OutputStream out = response.getOutputStream()) {
             copy(in, out, new byte[bufferSize]);
         } finally {
-            LOGGER.info("Finish download: {}", name);
+            LOGGER.info("{} Finish download: {}", request.getRemoteAddr(), name);
         }
     }
 
-    protected void downloadTar(FsEntry parent, Collection<? extends FsEntry> fsEntries, HttpServletResponse response) throws IOException {
+    protected void downloadTar(FsEntry parent, Collection<? extends FsEntry> fsEntries, HttpServletRequest request, HttpServletResponse response) throws IOException {
         LOGGER.debug("downloadTar(parent={}, entry={})", parent, fsEntries);
 
         List<FsEntry> entries = fsEntries.stream()
@@ -159,7 +159,7 @@ public class DownloadController {
                                                             + URLEncoder.encode(name, UTF8)
                                                                         .replace("+", "%20"));
 
-        LOGGER.info("Start download: {}", name);
+        LOGGER.info("{} Start download: {}", request.getRemoteAddr(), name);
         try (TarArchiveOutputStream tar = new TarArchiveOutputStream(response.getOutputStream(), UTF8)) {
             tar.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
             tar.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
@@ -179,7 +179,7 @@ public class DownloadController {
             }
             tar.finish();
         } finally {
-            LOGGER.info("Finish download: {}", name);
+            LOGGER.info("{} Finish download: {}", request.getRemoteAddr(), name);
         }
     }
 
