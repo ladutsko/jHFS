@@ -75,10 +75,6 @@ public class DownloadLimitHandlerInterceptor implements HandlerInterceptor {
     private static InetAddress getRemoteAddr(HttpServletRequest request) {
         try {
             InetAddress addr = InetAddress.getByName(request.getRemoteAddr());
-            if (addr.isSiteLocalAddress() || addr.isLoopbackAddress()) {
-                return getLoopbackAddress();
-            }
-
             return addr;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
