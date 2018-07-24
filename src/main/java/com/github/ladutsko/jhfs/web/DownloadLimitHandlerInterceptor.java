@@ -23,6 +23,8 @@
 
 package com.github.ladutsko.jhfs.web;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,24 +43,33 @@ import static java.net.InetAddress.getLoopbackAddress;
  */
 public class DownloadLimitHandlerInterceptor implements HandlerInterceptor {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(DownloadLimitHandlerInterceptor.class);
+
     private final ConcurrentMap<InetAddress, AtomicInteger> registry = new ConcurrentHashMap<>();
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        AtomicInteger counter = registry.computeIfAbsent(getRemoteAddr(request), key -> new AtomicInteger());
+        InetAddress addr = getRemoteAddr(request);
+        AtomicInteger counter = registry.computeIfAbsent(addr, key -> new AtomicInteger());
         int count = counter.incrementAndGet();
         if (6 < count) { // TODO configurable
             counter.decrementAndGet();
+            LOGGER.debug("Parallel download limit for {} is exceeded. Return 429" , addr);
             response.sendError(429, "Too Many Requests");
             return false;
         }
+
+        LOGGER.debug("Parallel download count for {} is {}" , addr, count);
 
         return true;
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
-        registry.get(getRemoteAddr(request)).decrementAndGet();
+        InetAddress addr = getRemoteAddr(request);
+        AtomicInteger counter = registry.computeIfAbsent(addr, key -> new AtomicInteger());
+        int count = counter.decrementAndGet();
+        LOGGER.debug("Parallel download count for {} is {}" , addr, count);
     }
 
     private static InetAddress getRemoteAddr(HttpServletRequest request) {

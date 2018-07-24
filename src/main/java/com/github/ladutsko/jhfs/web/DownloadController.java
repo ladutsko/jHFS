@@ -125,15 +125,20 @@ public class DownloadController {
     protected void download(FsEntry entry, HttpServletResponse response) throws IOException {
         LOGGER.debug("download(entry={})", entry);
 
+        String name = entry.getName();
+
         response.setContentType(Optional.ofNullable(fsService.probeContentType(entry.getPath())).orElse(BINARY_MIME_TYPE));
         response.setContentLengthLong(entry.getSize());
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''"
-                                                            + URLEncoder.encode(entry.getName(), UTF8)
+                                                            + URLEncoder.encode(name, UTF8)
                                                                         .replace("+", "%20"));
 
+        LOGGER.info("Start download: {}", name);
         try (InputStream in = fsService.newInputStream(entry.getPath());
              OutputStream out = response.getOutputStream()) {
             copy(in, out, new byte[bufferSize]);
+        } finally {
+            LOGGER.info("Finish download: {}", name);
         }
     }
 
@@ -147,11 +152,14 @@ public class DownloadController {
             return;
         }
 
+        String name = parent.getName() + TAR_EXT;
+
         response.setContentType(TAR_MIME_TYPE);
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''"
-                                                            + URLEncoder.encode(parent.getName() + TAR_EXT, UTF8)
+                                                            + URLEncoder.encode(name, UTF8)
                                                                         .replace("+", "%20"));
 
+        LOGGER.info("Start download: {}", name);
         try (TarArchiveOutputStream tar = new TarArchiveOutputStream(response.getOutputStream(), UTF8)) {
             tar.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
             tar.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_STAR);
@@ -170,6 +178,8 @@ public class DownloadController {
                 }
             }
             tar.finish();
+        } finally {
+            LOGGER.info("Finish download: {}", name);
         }
     }
 
