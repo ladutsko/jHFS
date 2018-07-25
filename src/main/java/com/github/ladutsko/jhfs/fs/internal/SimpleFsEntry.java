@@ -127,7 +127,7 @@ public class SimpleFsEntry implements FsEntry {
     public String toString() {
         return new StringBuilder(256).append("SimpleFsEntry{")
                                      .append("path='").append(path).append('\'')
-                                     .append(", NAME=").append(name)
+                                     .append(", name=").append(name)
                                      .append(", container=").append(container)
                                      .append(", lastModifiedTime=").append(lastModifiedTime)
                                      .append(", lastAccessTime=").append(lastAccessTime)
