@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -103,9 +104,14 @@ public class DownloadController {
         }
 
         response.setContentType(Optional.ofNullable(fsService.probeContentType(entry.getPath())).orElse(BINARY_MIME_TYPE));
+        response.setContentLengthLong(entry.getSize());
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''"
                                                             + URLEncoder.encode(entry.getName(), UTF8)
                                                                         .replace("+", "%20"));
+
+        if (HttpMethod.HEAD == request.getHttpMethod()) {
+            return null;
+        }
 
         return new AbstractFsEntryResource(entry) {
 
@@ -159,6 +165,10 @@ public class DownloadController {
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''"
                                                             + URLEncoder.encode(name, UTF8)
                                                                         .replace("+", "%20"));
+
+        if ("HEAD".equals(request.getMethod())) {
+            return;
+        }
 
         LOGGER.info("{} Start download: {}", request.getRemoteAddr(), name);
         try (TarArchiveOutputStream tar = new TarArchiveOutputStream(response.getOutputStream(), UTF8)) {
