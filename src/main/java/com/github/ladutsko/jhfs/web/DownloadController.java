@@ -30,6 +30,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -86,21 +87,41 @@ public class DownloadController {
     }
 
     @GetMapping("/**")
-    public void handleGet(ServletWebRequest request, HttpServletResponse response) throws IOException {
+    public Resource handleGet(ServletWebRequest request, HttpServletResponse response) throws IOException {
         String path = extractPath(request.getRequest());
         LOGGER.debug("handleGet(path={})", path);
 
         FsEntry entry = fsService.getEntry(path);
         if (entry.isContainer()) {
             downloadTar(entry, fsService.getChildren(path), request.getRequest(), response);
-        } else {
-            if (request.checkNotModified(entry.getLastModifiedTime().toEpochMilli())) {
-                LOGGER.debug("handleGet: NOT_MODIFIED");
-                return;
+            return null;
+        }
+
+        if (request.checkNotModified(entry.getLastModifiedTime().toEpochMilli())) {
+            LOGGER.debug("handleGet: NOT_MODIFIED");
+            return null;
+        }
+
+        response.setContentType(Optional.ofNullable(fsService.probeContentType(entry.getPath())).orElse(BINARY_MIME_TYPE));
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''"
+                                                            + URLEncoder.encode(entry.getName(), UTF8)
+                                                                        .replace("+", "%20"));
+
+        return new AbstractFsEntryResource(entry) {
+
+            @Override
+            public boolean isOpen() {
+                return true;
             }
 
-            download(entry, request.getRequest(), response);
-        }
+            @Override
+            public InputStream getInputStream() {
+                return new DownloadLoggingInputStream(fsService.newInputStream(entry.getPath()),
+                                                      entry.getName(),
+                                                      ((HttpServletRequest) request.getNativeRequest()).getRemoteAddr(),
+                                                      LOGGER);
+            }
+        };
     }
 
     @PostMapping("/**")
@@ -120,26 +141,6 @@ public class DownloadController {
                                         .orElseGet(() -> fsService.getChildren(path));
 
         downloadTar(entry, entries, request, response);
-    }
-
-    protected void download(FsEntry entry, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        LOGGER.debug("download(entry={})", entry);
-
-        String name = entry.getName();
-
-        response.setContentType(Optional.ofNullable(fsService.probeContentType(entry.getPath())).orElse(BINARY_MIME_TYPE));
-        response.setContentLengthLong(entry.getSize());
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''"
-                                                            + URLEncoder.encode(name, UTF8)
-                                                                        .replace("+", "%20"));
-
-        LOGGER.info("{} Start download: {}", request.getRemoteAddr(), name);
-        try (InputStream in = fsService.newInputStream(entry.getPath());
-             OutputStream out = response.getOutputStream()) {
-            copy(in, out, new byte[bufferSize]);
-        } finally {
-            LOGGER.info("{} Finish download: {}", request.getRemoteAddr(), name);
-        }
     }
 
     protected void downloadTar(FsEntry parent, Collection<? extends FsEntry> fsEntries, HttpServletRequest request, HttpServletResponse response) throws IOException {
