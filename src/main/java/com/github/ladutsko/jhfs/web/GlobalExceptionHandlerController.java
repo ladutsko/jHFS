@@ -37,7 +37,7 @@ import java.io.FileNotFoundException;
 public class GlobalExceptionHandlerController {
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler(FileNotFoundException.class)
+    @ExceptionHandler({FileNotFoundException.class, UnsupportedOperationException.class})
     public void handleNotFound() {
         // nothing
     }
