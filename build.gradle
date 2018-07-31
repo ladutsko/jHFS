@@ -5,9 +5,9 @@ buildscript {
     }
 
     dependencies {
-        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.3.RELEASE'
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.0.4.RELEASE'
         classpath 'com.netflix.nebula:gradle-ospackage-plugin:4.9.3'
-        classpath 'org.owasp:dependency-check-gradle:3.2.1'
+        classpath 'org.owasp:dependency-check-gradle:3.3.0'
     }
 }
 
