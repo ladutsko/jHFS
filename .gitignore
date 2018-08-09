@@ -15,3 +15,5 @@ Vagrantfile
 logs/
 application.pid
 application.port
+*.log
+*.log.*
