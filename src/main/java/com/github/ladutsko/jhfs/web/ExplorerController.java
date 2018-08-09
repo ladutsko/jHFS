@@ -90,6 +90,7 @@ public class ExplorerController {
 
         ModelAndView model = new ModelAndView("explorer");
         model.addObject("path", path);
+        model.addObject("parent", entry);
 
         // Breadcrumb
 

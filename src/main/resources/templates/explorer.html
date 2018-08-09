@@ -39,6 +39,10 @@
     </nav>
 
     <div id="list">
+        <div class="media" th:unless="${#strings.isEmpty(parent.description)}">
+            <div class="media-body" th:utext="${parent.description}" />
+        </div>
+
         <table class="table">
             <tbody>
             <tr th:each="entry : ${entries}">
